@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LateLog QR</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #f4f7f6, #ffffff);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #007bff;
+      color: white;
+      padding: 6px 20px;
+      height: 48px;
+      position: relative;
+      z-index: 1001;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 300;
+      color: #e0e0e0;
+    }
+
+    .logout-btn {
+      background-color: #dc3545;
+      color: white;
+      padding: 6px 14px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .logout-btn:hover {
+      background-color: #c82333;
+    }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: white;
+      cursor: pointer;
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      z-index: 1002;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #007bff;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      transition: transform 0.3s ease;
+      z-index: 1001;
+    }
+
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      margin: 8px 0;
+      padding: 10px 16px;
+      background-color: #0056b3;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: background-color 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar a:hover {
+      background-color: #003f88;
+    }
+
+    .sidebar a.active {
+      background-color: #004080;
+      font-weight: bold;
+      box-shadow: inset 0 0 5px rgba(255,255,255,0.3);
+    }
+
+    .badge {
+      background-color: red;
+      color: white;
+      border-radius: 50%;
+      padding: 2px 6px;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    .iframe-container {
+      flex-grow: 1;
+      padding: 10px;
+      position: relative;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 2px solid #007bff;
+      border-radius: 8px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #007bff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin: -20px 0 0 -20px;
+      display: none;
+      z-index: 999;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    footer {
+      text-align: center;
+      padding: 4px 8px;
+      font-size: 10px;
+      background-color: #f1f3f5;
+      height: 28px;
+      line-height: 1.2;
+    }
+
+    footer a {
+      text-decoration: none;
+      color: #007bff;
+      margin: 0 5px;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 48px;
+      left: 0;
+      right: 0;
+      bottom: 28px;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 1000;
+    }
+
+    .overlay.show {
+      display: block;
+    }
+
+    .close-btn {
+      display: none;
+      align-self: flex-end;
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: white;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .hamburger {
+        display: block;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 48px;
+        left: 0;
+        bottom: 28px;
+        transform: translateX(-100%);
+        box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+      }
+
+      .sidebar.show {
+        transform: translateX(0);
+      }
+
+      .close-btn {
+        display: block;
+      }
+
+      .main {
+        flex-direction: column;
+      }
+
+      .iframe-container {
+        padding: 10px 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <button class="hamburger" onclick="toggleSidebar()">☰</button>
+  <div>
+    <h1>LateLog QR</h1>
+    <p>Welcome, {{ user.first_name }} | A QR Code-Based Late Arrival Log System</p>
+  </div>
+  <button class="logout-btn" onclick="window.location.href='{% url 'logout' %}'">🔒 Logout</button>
+</header>
+
+<div class="main">
+  <div class="sidebar" id="sidebar">
+    <button class="close-btn" onclick="toggleSidebar()">×</button>
+    <a href="javascript:void(0);" onclick="loadIframe('register_student')">📘 Register Student</a>
+    <a href="javascript:void(0);" onclick="loadIframe('view_students')">👤 View Student Profile</a>
+    <a href="javascript:void(0);" onclick="loadIframe('scan_qr')" id="scan_qr_tab">📷 Scan QR Code</a>
+    <a href="javascript:void(0);" onclick="loadIframe('view_reports')">📑 Late Logs Report {% if today_count %}
+      <span class="badge" style="background-color: red; color: white; padding: 5px 10px; border-radius: 50%;">{{ today_count }}</span>
+    {% endif %}</a>
+    <a href="javascript:void(0);" onclick="loadIframe('chart_reports')">📊 Late Logs Visualization</a>
+  </div>
+
+  <div class="iframe-container">
+    <div class="spinner" id="loading-spinner"></div>
+    <iframe id="content-frame" src="" title="Content Viewer"></iframe>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<footer>
+  <p>&copy; 2025 Claver National High School |
+    <a href="#">Privacy Policy</a> |
+    <a href="#">Contact Us</a>
+  </p>
+</footer>
+
+<script>
+  const iframeSources = {
+    'register_student': "/logs/register/",
+    'view_students': "{% url 'view_students' %}",
+    'scan_qr': "{% url 'scan_qr' %}",  // Default to Scan QR Code
+    'view_reports': "{% url 'view_reports' %}",
+    'chart_reports': "{% url 'chart_reports' %}",
+  };
+
+  function loadIframe(page) {
+    localStorage.setItem('lastTab', page);
+
+    const iframe = document.getElementById("content-frame");
+    const spinner = document.getElementById("loading-spinner");
+
+    spinner.style.display = "block";  // Show the loading spinner
+
+    const links = document.querySelectorAll(".sidebar a");
+    links.forEach(link => link.classList.remove("active"));
+    const clickedLink = Array.from(links).find(link => link.onclick.toString().includes(page));
+    if (clickedLink) clickedLink.classList.add("active");
+
+    iframe.src = iframeSources[page] || "";  // Load the iframe source for the page
+    iframe.onload = () => spinner.style.display = "none";  // Hide the spinner once the iframe is loaded
+
+    if (window.innerWidth <= 768) {
+      document.getElementById("sidebar").classList.remove("show");
+      document.getElementById("overlay").classList.remove("show");
+    }
+  }
+
+  function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    sidebar.classList.toggle("show");
+    overlay.classList.toggle("show");
+  }
+
+  // Load last opened tab or default (Scan QR Code)
+  window.onload = function () {
+    const lastTab = localStorage.getItem('lastTab') || 'scan_qr';  // Default to 'scan_qr' if no last tab is saved
+    loadIframe(lastTab);
+    fetchLateCount();
+  };
+
+  // Placeholder: Fetch today's late logs count via API
+  function fetchLateCount() {
+    // Example using static number:
+    document.getElementById("late-count").textContent = 5;
+
+    // Uncomment for real API call:
+    /*
+    fetch("/logs/api/today_count/")
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("late-count").textContent = data.count;
+      });
+    */
+  }
+</script>
+
+</body>
+</html>

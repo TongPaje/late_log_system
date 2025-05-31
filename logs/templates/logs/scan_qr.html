@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scan QR Code</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f2f4f8;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 30px 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+
+    p {
+      margin-bottom: 30px;
+      color: #555;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .stop-btn {
+      background-color: #dc3545;
+      margin-top: 20px;
+    }
+
+    video {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 20px;
+      border: 1px solid #ddd;
+    }
+
+    /* Status Message Styling */
+    #status-message {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border-radius: 5px;
+      display: none;  /* Initially hidden */
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px 15px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Scan QR Code</h1>
+    <p>Use your camera to scan the student's QR code.</p>
+
+    <form id="scan-form">
+      {% csrf_token %}
+      <input type="text" id="qr_data" name="qr_data" placeholder="QR code data will appear here" required readonly />
+      <button type="button" onclick="startScan()">Start Scanning</button>
+    </form>
+
+    <video id="video" style="display: none;"></video>
+
+    <!-- Replaced "Back to Student List" with Stop button -->
+    <button type="button" class="stop-btn" onclick="stopScan()">Stop</button>
+
+    <!-- Status Message -->
+    <div id="status-message"></div>
+  </div>
+
+  <!-- QR scanning script -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+
+  <script>
+    let scanInterval;
+    let stream;
+    const beepSuccess = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");  // Success sound
+    const beepError = new Audio("https://actions.google.com/sounds/v1/animal/dog_bark.ogg");  // Error sound
+
+    // This function will handle the QR scanning process
+    function startScan() {
+      const video = document.getElementById("video");
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      video.style.display = "block";
+
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(mediaStream => {
+          stream = mediaStream;
+          video.srcObject = stream;
+          video.play();
+
+          video.onloadedmetadata = () => {
+            scanLoop();
+          };
+        })
+        .catch(err => {
+          showStatusMessage("Camera access error: " + err, "danger");
+          beepError.play();  // Play error sound
+        });
+
+      function scanLoop() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const qrCode = jsQR(imageData.data, canvas.width, canvas.height);
+
+        if (qrCode) {
+          const qrData = qrCode.data;
+
+          cancelAnimationFrame(scanInterval);
+          video.pause();
+          beepSuccess.play();  // Play success sound
+
+          document.getElementById("qr_data").value = qrData;
+
+          fetch("{% url 'scan_qr' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: new URLSearchParams({ qr_data: qrData })
+          })
+          .then(response => response.json())
+          .then(data => {
+            showStatusMessage(data.message, "success");
+            document.getElementById("qr_data").value = "";  // Clear the QR data field
+          })
+          .catch(error => {
+            showStatusMessage("Error saving scan: " + error, "danger");
+            beepError.play();  // Play error sound
+          })
+          .finally(() => {
+            video.play();
+            scanInterval = requestAnimationFrame(scanLoop);  // Keep scanning
+          });
+        } else {
+          scanInterval = requestAnimationFrame(scanLoop);
+        }
+      }
+    }
+
+    // Stop the scanning process
+    function stopScan() {
+      const video = document.getElementById("video");
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      cancelAnimationFrame(scanInterval);
+      video.style.display = "none";
+      video.srcObject = null;
+      showStatusMessage("Scanning stopped.", "danger");
+      beepError.play();  // Play error sound for stopping scan
+    }
+
+    // Show status message in the DOM
+    function showStatusMessage(message, type) {
+      const statusMessage = document.getElementById("status-message");
+      statusMessage.innerHTML = message;
+      statusMessage.style.display = "block";
+      if (type === "success") {
+        statusMessage.style.backgroundColor = "#28a745"; // green
+      } else if (type === "danger") {
+        statusMessage.style.backgroundColor = "#dc3545"; // red
+      }
+    }
+  </script>
+</body>
+</html>

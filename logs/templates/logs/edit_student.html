@@ -1,0 +1,216 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Student</title>
+
+    <!-- Admin CSS for consistent styling -->
+    <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/base.css' %}">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            padding: 25px 0;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 18px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 30px;
+            font-size: 30px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"],
+        select,
+        input[type="file"],
+        textarea {
+            width: 100%;
+            max-width: 600px;
+            padding: 12px;
+            height: 45px;
+            margin: 8px auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto 0;
+            display: block;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #f1f3f5;
+            margin-top: 40px;
+        }
+
+        footer p {
+            font-size: 16px;
+            color: #333;
+        }
+
+        /* Modal Styles */
+        .qr-modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+
+<div class="container">
+    <h2>Edit Student Information</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Form Fields Rendered Like Admin -->
+        {{ form.as_p }}  <!-- This renders the form as paragraphs, just like in the admin -->
+
+        <!-- QR Code Section -->
+        {% if student.qr_code %}
+            <label for="qr_code">QR Code:</label>
+            <img src="{{ student.qr_code.url }}" alt="QR Code" style="width: 150px; cursor: pointer;" onclick="openModal()">
+        {% endif %}
+        
+        <button type="submit">Update Student</button>
+    </form>
+
+    <a href="{% url 'view_students' %}" class="back-link">Back to Student List</a>
+</div>
+
+<!-- QR Code Modal -->
+<div id="qrModal" class="qr-modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        {% if student.qr_code %}
+            <img src="{{ student.qr_code.url }}" alt="QR Code" style="width: 100%; max-width: 300px;">
+            <p>Click close to return to the page.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Open the modal
+    function openModal() {
+        document.getElementById("qrModal").style.display = "block";
+    }
+
+    // Close the modal
+    function closeModal() {
+        document.getElementById("qrModal").style.display = "none";
+    }
+
+    // Close modal if clicked outside
+    window.onclick = function(event) {
+        if (event.target == document.getElementById("qrModal")) {
+            closeModal();
+        }
+    }
+</script>
+
+
+</body>
+</html>

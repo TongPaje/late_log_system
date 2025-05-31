@@ -1,0 +1,228 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student List</title>
+
+    <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/base.css' %}">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background-color: #0056b3;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        h2 {
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            text-align: center;
+            color: #0056b3;
+        }
+
+        .search-form {
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Smaller font size specifically for year level select and options */
+        select[name="year_level"] {
+            font-size: 14px; /* smaller than default */
+            padding: 8px 12px;
+            min-width: 140px;
+            height: 45px;
+        }
+
+        select[name="year_level"] option {
+            font-size: 13px; /* even smaller inside dropdown */
+        }
+
+        
+        .search-form input[type="text"],
+        .search-form select {
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            min-width: 220px;
+        }
+
+        .search-form button,
+        .export-btn {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-form button {
+            background-color: #0056b3;
+            color: white;
+        }
+
+        .search-form button:hover {
+            background-color: #004091;
+        }
+
+        .export-btn {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .export-btn:hover {
+            background-color: #138496;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0056b3;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #eef2f9;
+        }
+
+        a {
+            color: #0056b3;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            font-weight: bold;
+        }
+
+    
+        @media (max-width: 600px) {
+            .search-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-form input,
+            .search-form select,
+            .search-form button,
+            .export-btn {
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .export-btn {
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="container">
+    <h2>Student List</h2>
+
+    <form method="GET" action="" class="search-form">
+        <input type="text" name="search" placeholder="Search by name or learner reference number" value="{{ search_query }}">
+
+        <label for="year_level" style="font-weight: bold;">Year Level:</label>
+
+        <select name="year_level" onchange="this.form.submit()">
+            <option value="All" {% if selected_year == 'All' or not selected_year %}selected{% endif %}>All</option>
+            {% for year in year_levels %}
+                <option value="{{ year }}" {% if selected_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Search</button>
+
+        <a href="{% url 'export_student_list' %}?search={{ search_query|urlencode }}&year_level={{ selected_year|urlencode }}" class="export-btn">Export to Excel</a>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Learner Reference Number</th>
+                <th>Student Name</th>
+                <th>Year Level</th>
+                <th>Section</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+                <tr>
+                    <td>{{ student.learner_reference_number }}</td>
+                    <td>
+                        <a href="{% url 'edit_student' student_id=student.id %}">
+                            {{ student.last_name }}, {{ student.first_name }}{% if student.middle_name %} {{ student.middle_name }}{% endif %}
+                        </a>
+                    </td>
+                    <td>{{ student.year_level }}</td>
+                    <td>{{ student.section }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #888;">No students registered.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'register_student' %}" class="back-link">← Back to Register Student</a>
+</div>
+
+</body>
+</html>
