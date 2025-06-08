@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +11,8 @@
       height: 100%;
       margin: 0;
       font-family: "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #f4f7f6, #ffffff);
+      background: url("{% static 'logs/images/cnhs1.jpg' %}") no-repeat center center fixed;
+      background-size: cover;
       color: #333;
       display: flex;
       flex-direction: column;
@@ -43,16 +46,15 @@
     .logout-btn {
       background-color: #dc3545;
       color: white;
-      padding: 6px 14px;
+      padding: 5px 10px;
       font-size: 14px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       transition: background-color 0.3s;
-    }
-
-    .logout-btn:hover {
-      background-color: #c82333;
+      width: auto; /* ensures the button only takes the size of its content */
+      align-self: flex-start; /* keeps it aligned with the left edge like the tabs */
+      margin: 8px auto 7px;
     }
 
     .hamburger {
@@ -69,9 +71,13 @@
     }
 
     .main {
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 10px;
+      margin: 10px;
       display: flex;
       flex: 1;
       overflow: hidden;
+      min-height: 100vh;
     }
 
     .sidebar {
@@ -83,6 +89,9 @@
       padding: 16px;
       transition: transform 0.3s ease;
       z-index: 1001;
+      justify-content: flex-start;
+      height: 100vh;
+      overflow-y: auto;
     }
 
     .sidebar a {
@@ -226,102 +235,90 @@
 </head>
 <body>
 
-<header>
+
   <button class="hamburger" onclick="toggleSidebar()">☰</button>
-  <div>
-    <h1>LateLog QR</h1>
-    <p>Welcome, {{ user.first_name }} | A QR Code-Based Late Arrival Log System</p>
-  </div>
-  <button class="logout-btn" onclick="window.location.href='{% url 'logout' %}'">🔒 Logout</button>
-</header>
+  <div class="main">
+    <div class="sidebar" id="sidebar">
+      <div style="margin-bottom: 10px;">
+        <h2 style="margin: 0; font-size: 18px;">LateLog QR</h2>
+        <p style="margin: 4px 0 12px; font-size: 12px;">A QR Code-Based Late Arrival Log System<br> Welcome, {{ user.first_name }}</p>
+      </div>
 
-<div class="main">
-  <div class="sidebar" id="sidebar">
-    <button class="close-btn" onclick="toggleSidebar()">×</button>
-    <a href="javascript:void(0);" onclick="loadIframe('register_student')">📘 Register Student</a>
-    <a href="javascript:void(0);" onclick="loadIframe('view_students')">👤 View Student Profile</a>
-    <a href="javascript:void(0);" onclick="loadIframe('scan_qr')" id="scan_qr_tab">📷 Scan QR Code</a>
-    <a href="javascript:void(0);" onclick="loadIframe('view_reports')">📑 Late Logs Report {% if today_count %}
+      <button class="close-btn" onclick="toggleSidebar()">×</button>
+      <a href="javascript:void(0);" onclick="loadIframe('register_user')">📘 Register User</a>
+      <a href="javascript:void(0);" onclick="loadIframe('view_user_profile')">👤 View User Profile</a>  <!-- New Tab -->
+      <a href="javascript:void(0);" onclick="loadIframe('register_student')">📘 Register Student</a>
+      <a href="javascript:void(0);" onclick="loadIframe('view_students')">👤 View Student Profile</a>
+      <a href="javascript:void(0);" onclick="loadIframe('scan_qr')" id="scan_qr_tab">📷 Scan QR Code</a>
+      <a href="javascript:void(0);" onclick="loadIframe('view_reports')">📑 Late Logs Report {% if today_count %}
       <span class="badge" style="background-color: red; color: white; padding: 5px 10px; border-radius: 50%;">{{ today_count }}</span>
-    {% endif %}</a>
-    <a href="javascript:void(0);" onclick="loadIframe('chart_reports')">📊 Late Logs Visualization</a>
+      {% endif %}</a>
+      <a href="javascript:void(0);" onclick="loadIframe('chart_reports')">📊 Late Logs Visualization</a>
+      <button class="logout-btn" onclick="window.location.href='{% url 'logout' %}'">🔒 Logout</button>
+
+        <!-- Footer in Sidebar -->
+        <div style="margin-top: 10px; font-size: 10px; text-align: center; line-height: 1.4; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">
+          © 2025 Claver National High School
+        </div>
+    </div>
+
+    <div class="iframe-container">
+      <div class="spinner" id="loading-spinner"></div>
+      <iframe id="content-frame" src="" title="Content Viewer"></iframe>
+    </div>
   </div>
 
-  <div class="iframe-container">
-    <div class="spinner" id="loading-spinner"></div>
-    <iframe id="content-frame" src="" title="Content Viewer"></iframe>
-  </div>
-</div>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-<footer>
-  <p>&copy; 2025 Claver National High School |
-    <a href="#">Privacy Policy</a> |
-    <a href="#">Contact Us</a>
-  </p>
-</footer>
+  <script>
+    // Declare iframeSources only once globally
+    const iframeSources = {
+        'register_user': "/logs/register_user/",
+        'view_user_profile': "/logs/view_user_profile/",
+        'register_student': "/logs/register/",
+        'view_students': "{% url 'view_students' %}",
+        'scan_qr': "{% url 'scan_qr' %}",
+        'view_reports': "{% url 'view_reports' %}",
+        'chart_reports': "{% url 'chart_reports' %}",
+    };
 
-<script>
-  const iframeSources = {
-    'register_student': "/logs/register/",
-    'view_students': "{% url 'view_students' %}",
-    'scan_qr': "{% url 'scan_qr' %}",  // Default to Scan QR Code
-    'view_reports': "{% url 'view_reports' %}",
-    'chart_reports': "{% url 'chart_reports' %}",
-  };
+    function loadIframe(page) {
+        localStorage.setItem('lastTab', page);
 
-  function loadIframe(page) {
-    localStorage.setItem('lastTab', page);
+        const iframe = document.getElementById("content-frame");
+        const spinner = document.getElementById("loading-spinner");
 
-    const iframe = document.getElementById("content-frame");
-    const spinner = document.getElementById("loading-spinner");
+        spinner.style.display = "block";  // Show the loading spinner
 
-    spinner.style.display = "block";  // Show the loading spinner
+        const links = document.querySelectorAll(".sidebar a");
+        links.forEach(link => link.classList.remove("active"));
+        const clickedLink = Array.from(links).find(link => link.onclick.toString().includes(page));
+        if (clickedLink) clickedLink.classList.add("active");
 
-    const links = document.querySelectorAll(".sidebar a");
-    links.forEach(link => link.classList.remove("active"));
-    const clickedLink = Array.from(links).find(link => link.onclick.toString().includes(page));
-    if (clickedLink) clickedLink.classList.add("active");
+        iframe.src = iframeSources[page] || "";  // Load the iframe source for the page
+        iframe.onload = () => spinner.style.display = "none";  // Hide the spinner once the iframe is loaded
 
-    iframe.src = iframeSources[page] || "";  // Load the iframe source for the page
-    iframe.onload = () => spinner.style.display = "none";  // Hide the spinner once the iframe is loaded
-
-    if (window.innerWidth <= 768) {
-      document.getElementById("sidebar").classList.remove("show");
-      document.getElementById("overlay").classList.remove("show");
+        if (window.innerWidth <= 768) {
+            document.getElementById("sidebar").classList.remove("show");
+            document.getElementById("overlay").classList.remove("show");
+        }
     }
-  }
 
-  function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("overlay");
-    sidebar.classList.toggle("show");
-    overlay.classList.toggle("show");
-  }
+    function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("overlay");
+        sidebar.classList.toggle("show");
+        overlay.classList.toggle("show");
+    }
 
-  // Load last opened tab or default (Scan QR Code)
-  window.onload = function () {
-    const lastTab = localStorage.getItem('lastTab') || 'scan_qr';  // Default to 'scan_qr' if no last tab is saved
-    loadIframe(lastTab);
-    fetchLateCount();
-  };
+    // Load last opened tab or default (Scan QR Code)
+    window.onload = function () {
+        const lastTab = localStorage.getItem('lastTab') || 'scan_qr';  // Default to 'scan_qr' if no last tab is saved
+        loadIframe(lastTab);
+    };
+  </script>
 
-  // Placeholder: Fetch today's late logs count via API
-  function fetchLateCount() {
-    // Example using static number:
-    document.getElementById("late-count").textContent = 5;
-
-    // Uncomment for real API call:
-    /*
-    fetch("/logs/api/today_count/")
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("late-count").textContent = data.count;
-      });
-    */
-  }
-</script>
 
 </body>
 </html>
