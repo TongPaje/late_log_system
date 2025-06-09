@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
-
+import pymysql
+pymysql.install_as_MySQLdb()
 
 LOGIN_URL = '/login/'  # Redirect to the login page if the user is not authenticated
 
@@ -18,14 +19,12 @@ SECRET_KEY = 'django-insecure-6iu^t+n$rf9q2@06^ii_u4if-u48b+9aoi6=j_qxf@n1c22l4d
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.254.104', 'bb92-64-226-63-197.ngrok-free.app', "2a97-180-190-49-179.ngrok-free.app", '66c2-180-190-49-179.ngrok-free.app', 
-                 'a503-180-190-49-172.ngrok-free.app', '3ff7-64-226-63-159.ngrok-free.app', '605f-64-226-63-245.ngrok-free.app',]
+                 'a503-180-190-49-172.ngrok-free.app', '3ff7-64-226-63-159.ngrok-free.app', '605f-64-226-63-245.ngrok-free.app', 'f1c3-2001-4455-4a8-a900-c89d-3d9b-8680-770.ngrok-free.app',
+                 'effe-2001-4455-4a8-a900-c89d-3d9b-8680-770.ngrok-free.app',]
 CSRF_TRUSTED_ORIGINS = [
-    'https://66c2-180-190-49-179.ngrok-free.app',
-    'https://bb92-64-226-63-197.ngrok-free.app',  # If this is also used
-    'https://a503-180-190-49-172.ngrok-free.app',
-    'https://3ff7-64-226-63-159.ngrok-free.app',
-    'https://605f-64-226-63-245.ngrok-free.app',
-]   
+    'http://192.168.254.128',
+]
+  
 
 
 
@@ -58,7 +57,7 @@ ROOT_URLCONF = 'late_log_system.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Ensure this path is correct
+        'DIRS': [BASE_DIR / 'logs' / 'templates'],  # This path should point to your templates folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,6 +72,7 @@ TEMPLATES = [
 
 
 
+
 WSGI_APPLICATION = 'late_log_system.wsgi.application'
 
 
@@ -81,8 +81,15 @@ WSGI_APPLICATION = 'late_log_system.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'late_log_db',
+        'USER': 'late_user',
+        'PASSWORD': 'tong',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 
@@ -117,11 +124,18 @@ USE_I18N = True
 
 USE_TZ = True
 
+CSRF_COOKIE_SECURE = False  # Set to True if you're using HTTPS
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'  # Options: 'Strict', 'Lax', or 'None'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',  # Make sure your static files are in a directory like this
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
