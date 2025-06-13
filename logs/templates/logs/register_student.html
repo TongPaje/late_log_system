@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Student</title>
 
-    <!-- Admin CSS for consistent styling -->
     <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
     <link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
     <link rel="stylesheet" href="{% static 'admin/css/base.css' %}">
@@ -123,10 +122,7 @@
 
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-        
-        <!-- Render the form fields -->
         {{ form.as_p }}
-        
         <button type="submit">Register</button>
     </form>
 
