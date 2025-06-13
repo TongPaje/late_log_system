@@ -1,10 +1,9 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Student List</title>
 
     <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
@@ -39,6 +38,8 @@
             padding: 40px 30px;
             border-radius: 12px;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+            position: relative;
+            padding-bottom: 60px; /* space for total count */
         }
 
         h2 {
@@ -57,54 +58,43 @@
             align-items: center;
         }
 
-        /* Smaller font size specifically for year level select and options */
-        select[name="year_level"] {
-            font-size: 14px; /* smaller than default */
-            padding: 8px 12px;
-            min-width: 140px;
-            height: 45px;
-        }
-
-        select[name="year_level"] option {
-            font-size: 13px; /* even smaller inside dropdown */
-        }
-
-        
         .search-form input[type="text"],
-        .search-form select {
-            padding: 12px 15px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            min-width: 220px;
-        }
-
+        .search-form select,
         .search-form button,
         .export-btn {
-            padding: 12px 20px;
             font-size: 16px;
-            border: none;
+            padding: 12px 15px;
             border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
+            border: 1px solid #ccc;
+            height: 45px;
+            box-sizing: border-box;
         }
 
-        .search-form button {
-            background-color: #0056b3;
-            color: white;
-        }
-
-        .search-form button:hover {
-            background-color: #004091;
-        }
-
+        /* Remove border from buttons, override for buttons */
+        .search-form button,
         .export-btn {
-            background-color: #17a2b8;
-            color: white;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 600;
+            background-color: #004080;
+            color: white;              /* white text */
+            text-decoration: none;     /* remove underline */
         }
 
+        .search-form button:hover,
         .export-btn:hover {
-            background-color: #138496;
+            background-color: #003060;
+            transform: scale(1.05);
+        }
+
+        /* Smaller font size inside select options */
+        .search-form select option {
+            font-size: 14px;
         }
 
         table {
@@ -148,7 +138,15 @@
             font-weight: bold;
         }
 
-    
+        .total-students {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
         @media (max-width: 600px) {
             .search-form {
                 flex-direction: column;
@@ -171,15 +169,13 @@
 </head>
 <body>
 
-
 <div class="container">
     <h2>Student List</h2>
 
     <form method="GET" action="" class="search-form">
-        <input type="text" name="search" placeholder="Search by name or learner reference number" value="{{ search_query }}">
+        <input type="text" name="search" placeholder="🔍 Search by name or learner reference number" value="{{ search_query }}">
 
         <label for="year_level" style="font-weight: bold;">Year Level:</label>
-
         <select name="year_level" onchange="this.form.submit()">
             <option value="All" {% if selected_year == 'All' or not selected_year %}selected{% endif %}>All</option>
             {% for year in year_levels %}
@@ -187,9 +183,22 @@
             {% endfor %}
         </select>
 
-        <button type="submit">Search</button>
+        <label for="address" style="font-weight: bold;">Address:</label>
+        <input type="text" name="address" placeholder="Search by address" value="{{ address_filter }}">
 
-        <a href="{% url 'export_student_list' %}?search={{ search_query|urlencode }}&year_level={{ selected_year|urlencode }}" class="export-btn">Export to Excel</a>
+        <label for="sex" style="font-weight: bold;">Sex:</label>
+        <select name="sex" onchange="this.form.submit()">
+            <option value="">All</option>
+            <option value="M" {% if sex_filter == 'M' %}selected{% endif %}>Male</option>
+            <option value="F" {% if sex_filter == 'F' %}selected{% endif %}>Female</option>
+        </select>
+
+        <button type="submit">🔍 Search</button>
+
+        <a href="{% url 'export_student_list' %}?search={{ search_query|urlencode }}&year_level={{ selected_year|urlencode }}&address={{ address_filter|urlencode }}&sex={{ sex_filter|urlencode }}" 
+           class="export-btn" role="button" aria-label="Export to Excel">
+           📤 Export to Excel
+        </a>
     </form>
 
     <table>
@@ -197,29 +206,37 @@
             <tr>
                 <th>Learner Reference Number</th>
                 <th>Student Name</th>
+                <th>Address</th>
+                <th>Sex</th>
                 <th>Year Level</th>
                 <th>Section</th>
             </tr>
         </thead>
         <tbody>
             {% for student in students %}
-                <tr>
-                    <td>{{ student.learner_reference_number }}</td>
-                    <td>
-                        <a href="{% url 'edit_student' student_id=student.id %}">
-                            {{ student.last_name }}, {{ student.first_name }}{% if student.middle_name %} {{ student.middle_name }}{% endif %}
-                        </a>
-                    </td>
-                    <td>{{ student.year_level }}</td>
-                    <td>{{ student.section }}</td>
-                </tr>
+            <tr>
+                <td>{{ student.learner_reference_number }}</td>
+                <td>
+                    <a href="{% url 'edit_student' student_id=student.id %}">
+                        {{ student.last_name }}, {{ student.first_name }}{% if student.middle_name %} {{ student.middle_name }}{% endif %}
+                    </a>
+                </td>
+                <td>{{ student.address }}</td>
+                <td>{{ student.sex }}</td>
+                <td>{{ student.year_level }}</td>
+                <td>{{ student.section }}</td>
+            </tr>
             {% empty %}
-                <tr>
-                    <td colspan="4" style="text-align: center; color: #888;">No students registered.</td>
-                </tr>
+            <tr>
+                <td colspan="6" style="text-align: center; color: #888;">No students registered.</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <div class="total-students">
+        Total Registered Students: {{ total_students }}
+    </div>
 
     <a href="{% url 'register_student' %}" class="back-link">← Back to Register Student</a>
 </div>
