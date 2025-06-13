@@ -129,7 +129,8 @@ CSRF_COOKIE_SAMESITE = 'Lax'  # Options: 'Strict', 'Lax', or 'None'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Directory to collect static files during deployment
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',  # Make sure your static files are in a directory like this
@@ -141,5 +142,5 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Directory for storing user-uploaded files
 X_FRAME_OPTIONS = 'ALLOWALL'
