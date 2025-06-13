@@ -1,11 +1,59 @@
+# logs/models.py
+
 from django.db import models
 import qrcode
 from io import BytesIO
 from django.core.files import File
-from django.utils.timezone import now
 from django.core.validators import RegexValidator
+from django.utils.timezone import now
+
+from django.contrib.auth.models import User
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    user_type = models.CharField(max_length=50, choices=[('student', 'Student'), ('teacher', 'Teacher')])
+    address = models.CharField(max_length=255, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+
+    def __str__(self):
+        return self.user.username
+
+
 
 class Student(models.Model):
+    learner_reference_number = models.CharField(max_length=20)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    address = models.CharField(max_length=255)
+    sex = models.CharField(max_length=1)
+    year_level = models.IntegerField()
+    section = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+class LateLog(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)  # Cascade deletion
+    scan_time = models.DateTimeField()
+    late_minutes = models.IntegerField()
+
+    def __str__(self):
+        return f"Late Log for {self.student} at {self.scan_time}"
+
+
+
+class Student(models.Model):
+    SEX_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+    ]
+
+    sex = models.CharField(
+        max_length=1, 
+        choices=SEX_CHOICES,
+        default='M'
+    )
+    
     YEAR_LEVEL_CHOICES = [
         (7, 'Grade 7'),
         (8, 'Grade 8'),
@@ -27,6 +75,18 @@ class Student(models.Model):
     section = models.CharField(max_length=50)
     year_level = models.IntegerField(choices=YEAR_LEVEL_CHOICES)
     qr_code = models.ImageField(upload_to="qr_codes/", blank=True, null=True)  # QR code field
+    
+    # New fields
+    birthday = models.DateField(null=True, blank=True)
+    sex = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female')], default='M')
+    address = models.CharField(max_length=255, blank=True, null=True)
+    parent_name = models.CharField(max_length=255)
+    contact_number = models.CharField(
+        max_length=11, 
+        validators=[RegexValidator(r'^\d{11}$', 'Contact number must be exactly 11 digits.')],
+    )
+
+    sex = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female')],)
 
     class Meta:
         ordering = ['last_name', 'first_name']  # Default ordering by last name then first name
@@ -34,12 +94,16 @@ class Student(models.Model):
     def __str__(self):
         return f"{self.last_name}, {self.first_name}"
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs):    
         # Capitalize names and section
         self.first_name = self.first_name.upper()
         self.middle_name = self.middle_name.upper() if self.middle_name else ''
         self.last_name = self.last_name.upper()
         self.section = self.section.upper()
+
+        # Capitalize address and parent name
+        self.address = self.address.upper()
+        self.parent_name = self.parent_name.upper()
 
         # Ensure no numbers in names or section
         if any(char.isdigit() for char in self.first_name + self.middle_name + self.last_name + self.section):
