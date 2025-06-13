@@ -18,9 +18,7 @@ SECRET_KEY = 'django-insecure-6iu^t+n$rf9q2@06^ii_u4if-u48b+9aoi6=j_qxf@n1c22l4d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.254.104', 'bb92-64-226-63-197.ngrok-free.app', "2a97-180-190-49-179.ngrok-free.app", '66c2-180-190-49-179.ngrok-free.app', 
-                 'a503-180-190-49-172.ngrok-free.app', '3ff7-64-226-63-159.ngrok-free.app', '605f-64-226-63-245.ngrok-free.app', 'f1c3-2001-4455-4a8-a900-c89d-3d9b-8680-770.ngrok-free.app',
-                 'effe-2001-4455-4a8-a900-c89d-3d9b-8680-770.ngrok-free.app',]
+ALLOWED_HOSTS = ['late-log-app.onrender.com', 'localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = [
     'http://192.168.254.128',
 ]
