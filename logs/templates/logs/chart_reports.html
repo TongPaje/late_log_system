@@ -1,202 +1,277 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Student</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Late Arrival Chart Reports</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-    <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
-    <link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
-    <link rel="stylesheet" href="{% static 'admin/css/base.css' %}">
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background-color: #eef2f6;
+      margin: 0;
+      padding: 0;
+      color: #2c3e50;
+    }
 
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
-            color: #333;
-        }
+    header {
+      background-color: #0056b3;
+      color: white;
+      text-align: center;
+      padding: 24px 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
 
-        header {
-            background-color: #007bff;
-            color: white;
-            text-align: center;
-            padding: 25px 0;
-        }
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 1px;
+    }
 
-        header h1 {
-            margin: 0;
-            font-size: 36px;
-            font-weight: bold;
-        }
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      background-color: #fff;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 50px auto;
-            background-color: #fff;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            font-size: 18px;
-        }
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+      align-items: end;
+    }
 
-        h2 {
-            text-align: center;
-            color: #007bff;
-            margin-bottom: 30px;
-            font-size: 30px;
-        }
+    form label {
+      font-weight: 500;
+      margin-bottom: 6px;
+      display: block;
+    }
 
-        label {
-            font-weight: bold;
-            color: #333;
-        }
+    select,
+    input[type="date"],
+    input[type="text"],
+    button[type="submit"] {
+      padding: 10px 14px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 100%;
+      background: #fff;
+      transition: border-color 0.2s ease;
+    }
 
-        input[type="text"],
-        select,
-        input[type="file"],
-        textarea {
-            width: 100%;
-            max-width: 600px;
-            padding: 12px;
-            height: 45px;
-            margin: 8px auto;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            display: block;
-            box-sizing: border-box;
-        }
+    select:focus,
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
 
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 15px;
-            font-size: 18px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            max-width: 600px;
-            margin: 20px auto 0;
-            display: block;
-            transition: background-color 0.3s;
-        }
+    button[type="submit"] {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+    }
 
-        button:hover {
-            background-color: #0056b3;
-        }
+    button[type="submit"]:hover {
+      background-color: #0056b3;
+    }
 
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #007bff;
-            text-decoration: none;
-            font-size: 18px;
-        }
+    .action-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
 
-        .back-link:hover {
-            text-decoration: underline;
-        }
+    .export-btn,
+    .print-btn {
+      padding: 10px 18px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      font-weight: 500;
+    }
 
-        footer {
-            text-align: center;
-            padding: 15px;
-            background-color: #f1f3f5;
-            margin-top: 40px;
-        }
+    .export-btn {
+      background-color: #0dcaf0;
+    }
 
-        footer p {
-            font-size: 16px;
-            color: #333;
-        }
+    .export-btn:hover {
+      background-color: #0bb4d8;
+    }
 
-        .qr-modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding-top: 60px;
-        }
+    .print-btn {
+      background-color: #28a745;
+    }
 
-        .modal-content {
-            background-color: #fff;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 400px;
-            text-align: center;
-        }
+    .print-btn:hover {
+      background-color: #218838;
+    }
 
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
+    .chart-container {
+      margin-bottom: 48px;
+      padding: 24px;
+      border-radius: 12px;
+      background-color: #f8f9fa;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+      page-break-before: always;
+    }
 
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
+    .chart-container h2 {
+      margin-top: 0;
+      font-size: 22px;
+      color: #0056b3;
+      border-bottom: 2px solid #dee2e6;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 16px;
+      background-color: #f1f3f5;
+      font-size: 14px;
+      color: #666;
+      margin-top: 48px;
+    }
+
+    @media (max-width: 768px) {
+      .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    @media print {
+      .print-btn,
+      .export-btn,
+      .action-buttons,
+      form,
+      .footer {
+        display: none !important;
+      }
+
+      .container {
+        padding: 0;
+        margin: 0;
+        box-shadow: none;
+      }
+
+      .chart-container {
+        page-break-before: always;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .chart-container h2 {
+        font-size: 24px;
+        margin-bottom: 15px;
+      }
+
+      .chart-container iframe,
+      .chart-container img {
+        width: 100% !important;
+        height: auto !important;
+      }
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>Student Tardiness Visualization Report</h1>
+  </header>
 
-<div class="container">
-    <h2>Edit Student Information</h2>
+  <div class="container">
+    <div class="action-buttons">
+      <button class="export-btn" onclick="exportToPDF()">Export PDF</button>
+      <button class="print-btn" onclick="window.print()">Print</button>
+    </div>
 
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        {% if student.qr_code %}
-            <label for="qr_code">QR Code:</label>
-            <img src="{{ student.qr_code.url }}" alt="QR Code" style="width: 150px; cursor: pointer;" onclick="openModal()">
-        {% endif %}
-        <button type="submit">Update Student</button>
+    <form method="GET" action="{% url 'chart_reports' %}">
+      <div>
+        <label for="year_level">Year Level:</label>
+        <select name="year_level" id="year_level" onchange="this.form.submit()">
+          <option value="">All Levels</option>
+          {% for level in year_levels %}
+            <option value="{{ level }}" {% if level == selected_year_level %}selected{% endif %}>
+              Grade {{ level }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="start_date">From:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" />
+      </div>
+
+      <div>
+        <label for="end_date">To:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" />
+      </div>
+
+      <div>
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" placeholder="Enter address..." value="{{ address|default:'' }}">
+      </div>
+
+      <div>
+        <label for="sex">Sex:</label>
+        <select name="sex" id="sex">
+          <option value="">All</option>
+          <option value="M" {% if sex == 'M' %}selected{% endif %}>Male</option>
+          <option value="F" {% if sex == 'F' %}selected{% endif %}>Female</option>
+        </select>
+      </div>
+
+      <div>
+        <button type="submit">Apply Filter</button>
+      </div>
     </form>
 
-    <a href="{% url 'view_students' %}" class="back-link">Back to Student List</a>
-</div>
-
-<div id="qrModal" class="qr-modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        {% if student.qr_code %}
-            <img src="{{ student.qr_code.url }}" alt="QR Code" style="width: 100%; max-width: 300px;">
-            <p>Click close to return to the page.</p>
-        {% endif %}
+    <!-- Chart Containers with Title Suffix -->
+    <div class="chart-container">
+      <h2>Late Entries by Year Level{{ title_suffix }}</h2>
+      {{ year_level_chart|safe }}
     </div>
-</div>
 
-<script>
-    function openModal() {
-        document.getElementById("qrModal").style.display = "block";
+    <div class="chart-container">
+      <h2>Late Entries by Section{{ title_suffix }}</h2>
+      {{ section_chart|safe }}
+    </div>
+
+    <div class="chart-container">
+      <h2>Late Entries by Student{{ title_suffix }}</h2>
+      {{ student_chart|safe }}
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+  <script>
+    function exportToPDF() {
+      const element = document.querySelector('.container');
+      const opt = {
+        margin: 0.5,
+        filename: 'Late_Arrival_Reports.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+      };
+      html2pdf().from(element).set(opt).save();
     }
-
-    function closeModal() {
-        document.getElementById("qrModal").style.display = "none";
-    }
-
-    window.onclick = function(event) {
-        if (event.target == document.getElementById("qrModal")) {
-            closeModal();
-        }
-    }
-</script>
-
+  </script>
 </body>
 </html>
