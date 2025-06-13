@@ -49,6 +49,14 @@
       font-size: 16px;
     }
 
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
     button {
       background-color: #007bff;
       color: white;
@@ -66,7 +74,10 @@
 
     .stop-btn {
       background-color: #dc3545;
-      margin-top: 20px;
+    }
+
+    .stop-btn:hover {
+      background-color: #b52a37;
     }
 
     video {
@@ -77,19 +88,51 @@
       border: 1px solid #ddd;
     }
 
-    /* Status Message Styling */
-    #status-message {
+    #message-box {
       margin-top: 20px;
-      padding: 10px;
-      background-color: #28a745;
-      color: white;
-      border-radius: 5px;
-      display: none;  /* Initially hidden */
+      padding: 12px 16px;
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.4;
+      border-radius: 6px;
+      display: none;
+      opacity: 1;
+      transition: opacity 0.5s ease-in-out;
+      text-align: center;
+    }
+
+    #message-box .icon {
+      margin-right: 8px;
+      font-weight: bold;
+      font-size: 18px;
+      vertical-align: middle;
+    }
+
+    #message-box.fade {
+      color: #155724;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+    }
+
+    #message-box.error {
+      color: #721c24;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }
+
+    #spinner {
+      display: none;
+      margin: 15px auto 0;
     }
 
     @media (max-width: 600px) {
       .container {
         padding: 20px 15px;
+      }
+
+      .button-row {
+        flex-direction: column;
+        gap: 10px;
       }
 
       button {
@@ -106,116 +149,156 @@
     <form id="scan-form">
       {% csrf_token %}
       <input type="text" id="qr_data" name="qr_data" placeholder="QR code data will appear here" required readonly />
-      <button type="button" onclick="startScan()">Start Scanning</button>
     </form>
 
-    <video id="video" style="display: none;"></video>
+    
+    <div class="button-row">
+      <button type="button" id="start-btn" onclick="startScan()">Start Scanning</button>
+      <button type="button" class="stop-btn" id="stop-btn" onclick="stopScan()" disabled>Stop</button>
+    </div>
 
-    <!-- Replaced "Back to Student List" with Stop button -->
-    <button type="button" class="stop-btn" onclick="stopScan()">Stop</button>
+    <video id="video" style="display: none; margin-top: 20px;"></video>
+    <div id="message-box"></div>
 
-    <!-- Status Message -->
-    <div id="status-message"></div>
+    <div id="spinner" aria-label="Loading">
+      <svg width="40" height="40" viewBox="0 0 50 50" role="img" aria-hidden="true" focusable="false">
+        <circle cx="25" cy="25" r="20" fill="none" stroke="#007bff" stroke-width="5" stroke-linecap="round" stroke-dasharray="90,150" stroke-dashoffset="0">
+          <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="0.75s" from="0 25 25" to="360 25 25" />
+        </circle>
+      </svg>
+    </div>
   </div>
 
-  <!-- QR scanning script -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
   <script>
     let scanInterval;
     let stream;
-    const beepSuccess = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");  // Success sound
-    const beepError = new Audio("https://actions.google.com/sounds/v1/animal/dog_bark.ogg");  // Error sound
+    let lastScanned = "";
+    const beep = new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
 
-    // This function will handle the QR scanning process
-    function startScan() {
+    function showMessage(text, type = "success") {
+      const box = document.getElementById("message-box");
+      const icon = type === "error" ? "❌" : "✔️";
+      box.innerHTML = `<span class="icon">${icon}</span>${text}`;
+      box.className = type === "error" ? "error fade" : "fade";
+      box.style.display = "block";
+
+      setTimeout(() => {
+        box.style.opacity = 0;
+        setTimeout(() => {
+          box.style.display = "none";
+          box.innerHTML = "";
+          box.style.opacity = 1;
+        }, 500);
+      }, 4000);
+    }
+
+    function showSpinner(show) {
+      const spinner = document.getElementById("spinner");
+      spinner.style.display = show ? "block" : "none";
+    }
+
+    async function startScan() {
       const video = document.getElementById("video");
+      const startBtn = document.getElementById("start-btn");
+      const stopBtn = document.getElementById("stop-btn");
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      video.style.display = "block";
+      document.getElementById("message-box").style.display = "none";
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+        video.play();
+        video.onloadedmetadata = () => scanLoop(video);
+      } catch (err) {
+        const message = err.name === "NotAllowedError"
+          ? "Camera access was denied. Please allow access to use the QR scanner."
+          : "Camera access error: " + err.message;
+        showMessage(message, "error");
+        resetUI();
+      }
+    }
+
+    function scanLoop(video) {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
 
-      video.style.display = "block";
+      const loop = () => {
+        if (!video || video.readyState !== 4) {
+          scanInterval = requestAnimationFrame(loop);
+          return;
+        }
 
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(mediaStream => {
-          stream = mediaStream;
-          video.srcObject = stream;
-          video.play();
-
-          video.onloadedmetadata = () => {
-            scanLoop();
-          };
-        })
-        .catch(err => {
-          showStatusMessage("Camera access error: " + err, "danger");
-          beepError.play();  // Play error sound
-        });
-
-      function scanLoop() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         const qrCode = jsQR(imageData.data, canvas.width, canvas.height);
 
-        if (qrCode) {
-          const qrData = qrCode.data;
+        if (qrCode && qrCode.data !== lastScanned) {
+          lastScanned = qrCode.data;
+          document.getElementById("qr_data").value = lastScanned;
+          beep.play();
 
-          cancelAnimationFrame(scanInterval);
-          video.pause();
-          beepSuccess.play();  // Play success sound
+          sendDataToServer(lastScanned);
 
-          document.getElementById("qr_data").value = qrData;
-
-          fetch("{% url 'scan_qr' %}", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-              "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: new URLSearchParams({ qr_data: qrData })
-          })
-          .then(response => response.json())
-          .then(data => {
-            showStatusMessage(data.message, "success");
-            document.getElementById("qr_data").value = "";  // Clear the QR data field
-          })
-          .catch(error => {
-            showStatusMessage("Error saving scan: " + error, "danger");
-            beepError.play();  // Play error sound
-          })
-          .finally(() => {
-            video.play();
-            scanInterval = requestAnimationFrame(scanLoop);  // Keep scanning
-          });
-        } else {
-          scanInterval = requestAnimationFrame(scanLoop);
+          setTimeout(() => {
+            lastScanned = "";
+          }, 3000);
         }
+
+        scanInterval = requestAnimationFrame(loop);
+      };
+
+      loop();
+    }
+
+    async function sendDataToServer(qrData) {
+      showSpinner(true);
+      try {
+        const response = await fetch("{% url 'scan_qr' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+          },
+          body: new URLSearchParams({ qr_data: qrData })
+        });
+
+        const data = await response.json();
+        showMessage(data.message);
+        document.getElementById("qr_data").value = "";
+      } catch (error) {
+        showMessage("Error saving scan: " + error.message, "error");
+      } finally {
+        showSpinner(false);
       }
     }
 
-    // Stop the scanning process
     function stopScan() {
       const video = document.getElementById("video");
+      const startBtn = document.getElementById("start-btn");
+      const stopBtn = document.getElementById("stop-btn");
+
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
       cancelAnimationFrame(scanInterval);
       video.style.display = "none";
       video.srcObject = null;
-      showStatusMessage("Scanning stopped.", "danger");
-      beepError.play();  // Play error sound for stopping scan
+
+      document.getElementById("qr_data").value = "";
+      showMessage("Scanning stopped.");
+      resetUI();
     }
 
-    // Show status message in the DOM
-    function showStatusMessage(message, type) {
-      const statusMessage = document.getElementById("status-message");
-      statusMessage.innerHTML = message;
-      statusMessage.style.display = "block";
-      if (type === "success") {
-        statusMessage.style.backgroundColor = "#28a745"; // green
-      } else if (type === "danger") {
-        statusMessage.style.backgroundColor = "#dc3545"; // red
-      }
+    function resetUI() {
+      document.getElementById("start-btn").disabled = false;
+      document.getElementById("stop-btn").disabled = true;
     }
   </script>
 </body>
