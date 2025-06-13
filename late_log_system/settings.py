@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
-import pymysql
-pymysql.install_as_MySQLdb()
+from dotenv import load_dotenv
+load_dotenv()
 
 LOGIN_URL = '/login/'  # Redirect to the login page if the user is not authenticated
 
@@ -79,15 +79,12 @@ WSGI_APPLICATION = 'late_log_system.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'late_log_db',
-        'USER': 'late_user',
-        'PASSWORD': 'tong',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        'ENGINE': 'django.db.backends.postgresql',  # Use PostgreSQL
+        'NAME': os.getenv('DB_NAME', 'postgresql_latelogcnhs'),  # Database name
+        'USER': os.getenv('DB_USER', 'postgresql_latelogcnhs_user'),  # Database user
+        'PASSWORD': os.getenv('DB_PASSWORD', 'uhjdsRHzAVJ73bK3GaSPK0sG177jjvUH'),  # Database password
+        'HOST': os.getenv('DB_HOST', 'dpg-d14jg8bipnbc73ffe060-a.oregon-postgres.render.com'),  # Database host
+        'PORT': os.getenv('DB_PORT', '5432'),  # PostgreSQL default port
     }
 }
 
