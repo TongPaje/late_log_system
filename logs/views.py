@@ -464,7 +464,10 @@ def view_students(request):
     # Count total students after applying filters
     total_students = students.count()
 
-    # Pass the filtered students and the total student count to the template
+    # Define the year levels to be passed to the template
+    year_levels = ['7', '8', '9', '10', '11', '12']
+
+    # Pass the filtered students, total student count, and other variables to the template
     return render(request, 'logs/students.html', {
         'students': students,
         'total_students': total_students,  # Pass the total count
@@ -472,8 +475,8 @@ def view_students(request):
         'year_level_filter': year_level_filter,
         'address_filter': address_filter,
         'sex_filter': sex_filter,
+        'year_levels': year_levels,  # Pass year levels
     })
-
 
 @login_required
 def index(request):
