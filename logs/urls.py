@@ -2,6 +2,9 @@
 
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 urlpatterns = [
     # Root URL that redirects to the login page
@@ -20,7 +23,7 @@ urlpatterns = [
     path('students/', views.view_students, name='students'),
     path('register/', views.register_student, name='register_student'),
     # Other page URL
-    path('home/', views.home, name='home'),  # This is the new home page
+    
     path('students/', views.view_students, name='view_students'), 
     path('students/edit/<int:student_id>/', views.edit_student, name='edit_student'),
     path('scan/', views.scan_qr, name='scan_qr'),
@@ -31,5 +34,7 @@ urlpatterns = [
     path('students/export/', views.export_student_list, name='export_student_list'),
     path('logout/', views.logout_view, name='logout'),
  
-   
-]
+   ]
+# Serve media files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
