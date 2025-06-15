@@ -154,3 +154,4 @@ xgboost==3.0.1
 xlwt==1.3.0
 gunicorn==20.1.0
 python-dotenv
+python manage.py collectstatic
